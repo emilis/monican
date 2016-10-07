@@ -18,6 +18,10 @@ export default function createContext({ displayName, actionsCreate, storesCreate
     /// TODO: switch to using react-display-name:
     const viewDisplayName = displayName + '_ContextCreator';
 
+    const actionNames = Object.getOwnPorpertyNames(actionsCreate || {});
+    const mediatorNames = Object.getOwnPorpertyNames(mediators || {});
+    const storeNames = Object.getOwnPorpertyNames(storesCreate || {});
+
     return React.createClass({
 
         displayName: viewDisplayName,
@@ -57,15 +61,15 @@ export default function createContext({ displayName, actionsCreate, storesCreate
             this.stores = this.context.stores ? { ...this.context.stores } : {};
             this.mediators = {};
 
-            for (const name in actionsCreate) {
+            for (const name of actionNames) {
                 this.actions[name] = createActions(this, name, actionsCreate[name]);
             }
 
-            for (const name in storesCreate) {
+            for (const name of storeNames) {
                 this.stores[name] = createStore(this, name, storesCreate[name]);
             }
 
-            for (const name in mediators) {
+            for (const name of mediatorNames) {
                 this.mediators[name] = createStore(this, name + '_mediator', mediators[name]);
             }
 
@@ -74,32 +78,32 @@ export default function createContext({ displayName, actionsCreate, storesCreate
              */
             if (this.dispatcher.isDispatching()) {
 
-                for (const name in storesCreate) {
+                for (const name of storeNames) {
                     this.stores[name].componentWillMount();
                 }
-                for (const name in this.mediators) {
+                for (const name of mediatorNames) {
                     this.mediators[name].componentWillMount();
                 }
             } else {
                 this.dispatcher.dispatch({ actionId: ACTION_ON_MOUNT_STORES });
             }
 
-            for (const name in storesCreate) {
+            for (const name of storeNames) {
                 connectToStore(this, name, this.stores[name]);
             }
         },
 
         componentWillUnmount() {
 
-            for (const name in storesCreate) {
+            for (const name of storeNames) {
                 disconnectFromStore(this, name, this.stores[name]);
             }
 
-            for (const name in this.mediators) {
+            for (const name of mediatorNames) {
                 this.mediators[name].componentWillUnmount();
             }
 
-            for (const name in storesCreate) {
+            for (const name of storeNames) {
                 this.stores[name].componentWillUnmount();
             }
         },

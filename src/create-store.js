@@ -1,4 +1,9 @@
-import R from 'ramda';
+import get from 'lodash/get';
+import forOwn from 'lodash/forOwn';
+import mapValues from 'lodash/mapValues';
+import pick from 'lodash/pick';
+import uniq from 'lodash/uniq';
+import values from 'lodash/values';
 
 import { ACTION_ON_MOUNT_STORES } from './constants';
 import ChangeEmitter from './change-emitter';
@@ -88,16 +93,17 @@ class Store extends ChangeEmitter {
 
     waitFor(...args) {
 
-        const names = R.uniq(R.flatten(args));
+        /// ['a', ['a', 'b'], 'c'] → ['a', 'b', 'c']
+        const names = uniq(Array.prototype.concat.apply([], args));
         /// TODO: check store names for typos and warn via console
-        const stores = R.pick(names, this.stores);
+        const stores = pick(names, this.stores);
 
         if (this.dispatcher.isDispatching()) {
-            const tokens = R.pluck('token', R.values(stores));
+            const tokens = values(stores).map(store => store.token);
             this.dispatcher.waitFor(tokens);
         }
 
-        return R.mapObjIndexed(store => store.state, stores);
+        return mapValues(stores, store => store.state);
     }
 
     onAction({ actionId, argument }) {
@@ -119,22 +125,22 @@ class Store extends ChangeEmitter {
             return actionHandlers;
         }
 
-        for (const groupName in specHandlers) {
-            for (const actionName in specHandlers[groupName]) {
+        forOwn(specHandlers, (actionGroup, actionGroupName) => {
+            forOwn(actionGroup, (actionFn, actionName) => {
 
-                const actionId = R.path([groupName, actionName, 'actionId'], this.actions);
+                const actionId = get(this.actions, [actionGroupName, actionName, 'actionId']);
 
                 if (actionId) {
-                    const fn = R.path([groupName, actionName], specHandlers);
-                    actionHandlers[actionId] = fn;
+                    actionHandlers[actionId] = actionFn;
                 } else {
                     console.error(
-                        'Action', groupName + '.' + actionName,
+                        'Action', actionGroupName + '.' + actionName,
                         'not found for store', this.displayName,
                     );
                 }
-            }
-        }
+            })
+        });
+
         return actionHandlers;
     }
 }

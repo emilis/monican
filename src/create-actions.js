@@ -1,5 +1,5 @@
+import mapValues from 'lodash/mapValues';
 import objectAssign from 'object-assign';
-import R from 'ramda';
 
 
 const SEPARATOR = '/';
@@ -18,7 +18,8 @@ export default function createActions(view, groupName, groupActions) {
     const groupId = view.displayName + SEPARATOR + groupName + SEPARATOR + groupCounter;
     groupCounter++;
 
-    return R.mapObjIndexed(
+    return mapValues(
+        groupActions,
         (argTypes, actionName) => {
             const actionId = groupId + SEPARATOR + actionName;
             return objectAssign(
@@ -26,6 +27,5 @@ export default function createActions(view, groupName, groupActions) {
                 { actionId },
             );
         },
-        groupActions,
     );
 }

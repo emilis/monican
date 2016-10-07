@@ -1,9 +1,7 @@
-import R from 'ramda';
 import React, { PropTypes } from 'react';
+import mapValues from 'lodash/mapValues';
+import pick from 'lodash/pick';
 
-
-const makeTypeObject = R.mapObjIndexed(R.always(PropTypes.object));
-const makeTypeShape = R.mapObjIndexed(PropTypes.shape);
 
 const renderErrorStyle = {
     display: 'block',
@@ -37,8 +35,8 @@ export default function createView(spec) {
         },
 
         propTypes: {
-            ...makeTypeShape(storesUse),
-            ...makeTypeObject(storesCreate),
+            ...mapValues(storesUse, PropTypes.shape),
+            ...mapValues(storesCreate, () => PropTypes.object),
             ...propTypes,
         },
 
@@ -50,10 +48,10 @@ export default function createView(spec) {
                     ...actionsUse,
                     ...actionsCreate,
                 };
-                this.actions = {};
-                for (const groupName in mergedActions) {
-                    this.actions[groupName] = this.context.actions[groupName];
-                }
+                this.actions = pick(
+                    this.context.actions,
+                    Object.getOwnPorpertyNames(mergedActions)
+                );
             }
 
             return componentWillMount && componentWillMount.apply(this, arguments);
